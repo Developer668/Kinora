@@ -39,7 +39,7 @@ function ProgressRing({ progress, size = 28 }: { progress: number; size?: number
 
 export default function ContinueReadingCard({ book }: ContinueReadingCardProps) {
   return (
-    <div className="glass-card rounded-xl px-3 py-2 flex items-center gap-2.5 w-[260px] animate-fade-in">
+    <div className="glass-card rounded-xl px-3 py-2 flex items-center gap-2.5 w-[260px] animate-fade-in mt-4">
       {/* Book cover mini */}
       <div
         className="w-10 h-14 rounded flex-shrink-0 relative overflow-hidden"

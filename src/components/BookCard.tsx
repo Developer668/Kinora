@@ -1,4 +1,5 @@
 import type { Book } from "../data/books";
+import { CometCard } from "./CometCard";
 
 interface BookCardProps {
   book: Book;
@@ -40,13 +41,14 @@ function ProgressRing({ progress }: { progress: number }) {
 
 export default function BookCard({ book }: BookCardProps) {
   return (
-    <div className="flex-shrink-0 w-[150px] group cursor-pointer">
-      {/* Book cover */}
+    <div className="flex-shrink-0 w-[150px] group cursor-pointer" style={{ perspective: 600 }}>
+      <CometCard rotateDepth={12} translateDepth={15}>
       <div className="book-3d-wrapper relative mb-1.5">
         <div
-          className="book-cover w-[150px] overflow-hidden relative"
+          className="book-cover w-[150px] relative"
           style={{ background: book.coverGradient }}
         >
+          <div className="book-cover-inner">
           <img
             src={book.coverImage}
             alt={book.title}
@@ -73,12 +75,14 @@ export default function BookCard({ book }: BookCardProps) {
           )}
 
           {book.isNew && (
-            <div className="absolute top-1 right-1 badge-new-gold px-1.5 py-0.5 text-[8px] font-bold text-white">
+            <div className="absolute top-1 right-1 badge-new-gold px-1.5 py-0.5 text-[8px] font-bold text-amber-950">
               New
             </div>
           )}
+          </div>
         </div>
       </div>
+      </CometCard>
 
       {/* Title below cover */}
       <h4 className="text-[11px] font-medium text-kinora-text truncate leading-tight">

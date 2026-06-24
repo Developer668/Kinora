@@ -11,6 +11,45 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+:root {
+  --spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --spring-duration: 0.5s;
+}
+
+.tab-fade {
+  animation: tabFade 0.2s ease-out;
+}
+
+@keyframes tabFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes navUnderline {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-page > * > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -37,37 +76,55 @@ body {
 /* ===== Background ===== */
 .kinora-bg {
   background:
-    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(80, 60, 40, 0.12) 0%, transparent 60%),
-    linear-gradient(180deg, #181614 0%, #131110 40%, #0e0d0c 100%);
-  background-attachment: fixed;
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(120, 90, 50, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(60, 50, 40, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #1a1816 0%, #141210 35%, #0f0e0c 100%);
   position: relative;
 }
 
 .refraction-left, .refraction-right { display: none; }
 
-/* ===== Glass ===== */
-.liquid-glass-nav {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+/* ===== Liquid Glass — Apple-style ===== */
+
+/* Subtle diagonal sheen only — no noise texture to avoid edge artifacts */
+.liquid-glass-dock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 30%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.liquid-glass-nav.scrolled {
-  background: rgba(20, 18, 16, 0.55);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+/* Top + bottom specular edge highlights */
+.liquid-glass-dock::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 15%, transparent 85%, rgba(255,255,255,0.05) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.liquid-glass-dock {
+  background: rgba(40, 38, 34, 0.72);
+  backdrop-filter: blur(20px) saturate(150%) brightness(1.06);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.06);
+  border: none;
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.35),
+    0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .glass-input {
@@ -75,11 +132,13 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
   color: rgba(232, 226, 216, 0.85);
   transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .glass-input:focus {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15), 0 0 0 2px rgba(255, 255, 255, 0.05);
   outline: none;
 }
 
@@ -89,11 +148,16 @@ body {
 
 .nav-btn-active {
   background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .nav-btn-hover { transition: all 0.2s ease; }
-.nav-btn-hover:hover { background: rgba(255, 255, 255, 0.05); }
+.nav-btn-hover:hover {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
 
 /* ===== Shelf — minimal floating ===== */
 .shelf-container { position: relative; }
@@ -103,38 +167,79 @@ body {
   margin: 0 4px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 15%,
-    rgba(255, 255, 255, 0.06) 85%,
+    rgba(255, 255, 255, 0.06) 10%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.06) 90%,
     transparent 100%);
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== Books ===== */
 .book-3d-wrapper {
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.book-3d-wrapper:hover {
-  transform: translateY(-8px) scale(1.03);
-}
-
-.book-3d-wrapper:active {
-  transform: translateY(-2px) scale(1.01);
-  transition: transform 0.1s ease;
+  transition: box-shadow 0.3s ease, border-radius 0.3s ease;
+  transform-style: preserve-3d;
 }
 
 .book-cover {
   aspect-ratio: 2 / 3;
-  border-radius: 2px;
+  border-radius: 3px;
   position: relative;
-  overflow: hidden;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, border-radius 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.book-cover-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/* 3D book thickness — right edge (pages side) */
+.book-cover::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  right: -8px;
+  width: 8px;
+  background: repeating-linear-gradient(
+    180deg,
+    #e8e2d8 0px,
+    #d4cec4 1px,
+    #e8e2d8 2px,
+    #d8d2c8 3px
+  );
+  border-radius: 0 2px 2px 0;
+  transform: rotateY(90deg);
+  transform-origin: left center;
+}
+
+/* 3D book thickness — bottom edge */
+.book-cover::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: -8px;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    #e8e2d8 0px,
+    #d4cec4 1px,
+    #e8e2d8 2px,
+    #d8d2c8 3px
+  );
+  border-radius: 0 0 2px 2px;
+  transform: rotateX(90deg);
+  transform-origin: top center;
 }
 
 .book-3d-wrapper:hover .book-cover {
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 164, 78, 0.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
 }
 
 .book-spine {
@@ -180,19 +285,16 @@ body {
 
 /* ===== Badge ===== */
 .badge-new-gold {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(212, 164, 78, 0.9) 0%, rgba(180, 140, 60, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(212, 164, 78, 0.25);
 }
 
 /* ===== Footer ===== */
 .footer-glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(15, 14, 12, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ===== Animations ===== */

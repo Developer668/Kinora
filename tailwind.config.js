@@ -24,7 +24,7 @@ module.exports = {
           "Roboto",
           "sans-serif",
         ],
-        serif: ["Playfair Display", "Georgia", "serif"],
+        serif: ["Fraunces", "Georgia", "serif"],
       },
       animation: {
         "fade-in": "fadeIn 0.4s ease-out",

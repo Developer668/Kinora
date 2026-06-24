@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import logoImg from "../assets/logo-transparent.png";
+import GooeySearch from "./GooeySearch";
 
 /* ===== Kinora Logo ===== */
 const BookLogoIcon = ({ size = 22 }: { size?: number }) => (
@@ -50,7 +51,7 @@ const SearchIcon = ({ size = 15 }: { size?: number }) => (
   </svg>
 );
 
-const GeometricAvatar = ({ size = 34 }: { size?: number }) => (
+export const GeometricAvatar = ({ size = 34 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
     <defs>
       <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -65,7 +66,7 @@ const GeometricAvatar = ({ size = 34 }: { size?: number }) => (
   </svg>
 );
 
-const navItems = [
+export const navItems = [
   { icon: HomeIcon, label: "Home" },
   { icon: LibraryIcon, label: "Library" },
   { icon: WatchIcon, label: "Watch" },
@@ -74,60 +75,178 @@ const navItems = [
 ];
 
 export default function Navbar({ active, onNavigate }: { active: string; onNavigate: (page: string) => void }) {
-  const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [dockVisible, setDockVisible] = useState(true);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const onScroll = () => {
+      const scrollBottom = window.innerHeight + window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      setDockVisible(scrollBottom < docHeight - 120);
+    };
+    window.addEventListener("scroll", onScroll);
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const dockHiddenPages = ["Edit Profile", "Settings", "Pricing"];
+  const showDock = !dockHiddenPages.includes(active);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-profile-dropdown]')) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-3">
-      <nav className={`liquid-glass-nav rounded-full px-4 py-1.5 flex items-center justify-between max-w-[1280px] mx-auto ${scrolled ? "scrolled" : ""}`}>
-        {/* Left: Logo */}
-        <div className="flex items-center gap-2 relative z-10 cursor-pointer" onClick={() => onNavigate("Home")}>
-          <BookLogoIcon size={40} />
-          <span className="font-serif text-base font-semibold text-kinora-text tracking-wide italic">
-            Kinora
-          </span>
+    <>
+      {/* Top bar — clean, no glass */}
+      <header className="fixed top-0 left-0 right-0 z-50" data-profile-dropdown style={{
+        background: "rgba(15, 14, 12, 0.6)",
+        backdropFilter: "blur(12px) saturate(140%)",
+        WebkitBackdropFilter: "blur(12px) saturate(140%)",
+      }}>
+        <div className="px-6 py-2.5 flex items-center justify-between max-w-[1280px] mx-auto">
+          {/* Left: Logo */}
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate("Home")}>
+            <BookLogoIcon size={36} />
+            <span className="font-serif text-base font-semibold text-kinora-text tracking-wide">
+              Kinora
+            </span>
+          </div>
+
+          {/* Right: Search + Profile */}
+          <div className="flex items-center gap-2.5">
+            <GooeySearch />
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="w-7 h-7 rounded-full overflow-hidden border border-white/10 flex items-center justify-center transition-transform hover:scale-105"
+            >
+              <GeometricAvatar size={28} />
+            </button>
+          </div>
         </div>
 
-        {/* Center: Nav Links */}
-        <div className="flex items-center gap-0.5 relative z-10">
+        {/* Profile dropdown */}
+        {profileOpen && (
+          <div
+            className="absolute top-12 right-6 w-60 rounded-2xl overflow-hidden z-[60]"
+            style={{
+              background: "rgba(22, 20, 18, 0.98)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5)",
+              animation: "dropdownIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center gap-3 px-4 py-3"
+              style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
+            >
+              <GeometricAvatar size={32} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-kinora-text truncate">User</p>
+                <p className="text-[10px] text-kinora-muted truncate">user@kinora.app</p>
+              </div>
+            </div>
+
+            {/* Menu items */}
+            <div className="py-1">
+              <button
+                onClick={() => { onNavigate("Edit Profile"); setProfileOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-kinora-muted hover:text-kinora-text hover:bg-white/[0.03] transition-colors"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 12.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                  <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+                </svg>
+                <span className="flex-1 text-left">Edit Profile</span>
+              </button>
+              <button
+                onClick={() => { onNavigate("Settings"); setProfileOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-kinora-muted hover:text-kinora-text hover:bg-white/[0.03] transition-colors"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+                </svg>
+                <span className="flex-1 text-left">Settings</span>
+              </button>
+              <button
+                onClick={() => { onNavigate("Pricing"); setProfileOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-kinora-muted hover:text-kinora-text hover:bg-white/[0.03] transition-colors"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                <span className="flex-1 text-left">Pricing</span>
+              </button>
+            </div>
+
+            {/* Divider + Log Out */}
+            <div className="h-px mx-3" style={{ background: "rgba(255, 255, 255, 0.06)" }} />
+            <div className="py-1">
+              <button className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-red-400/70 hover:text-red-400 hover:bg-white/[0.03] transition-colors">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <path d="M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                <span className="flex-1 text-left">Log Out</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Floating dock — hides on certain pages and when near bottom */}
+      {showDock && (
+      <div
+        className="fixed z-50 liquid-glass-dock"
+        style={{
+          position: "fixed",
+          bottom: 16,
+          left: "50%",
+          transform: `translateX(-50%) translateY(${dockVisible ? 0 : 100}px)`,
+          borderRadius: "999px",
+          padding: "5px 7px",
+          opacity: dockVisible ? 1 : 0,
+          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
+          pointerEvents: dockVisible ? "auto" : "none",
+        }}
+      >
+        <nav className="flex items-center" style={{ gap: 2 }}>
           {navItems.map((item) => (
             <button
               key={item.label}
               onClick={() => onNavigate(item.label)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium relative z-10 transition-all 0.2s ease ${
+              className={`flex items-center gap-1.5 font-medium transition-all ${
                 active === item.label
                   ? "nav-btn-active text-white"
-                  : "nav-btn-hover text-kinora-muted hover:text-kinora-text"
+                  : "nav-btn-hover text-white/70 hover:text-white"
               }`}
+              style={{
+                padding: "7px 12px",
+                borderRadius: "999px",
+                fontSize: 11,
+                transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                transitionDuration: "0.35s",
+                textShadow: active === item.label
+                  ? "0 0 12px rgba(255,255,255,0.4)"
+                  : "0 0 8px rgba(255,255,255,0.15)",
+              }}
             >
-              <item.icon size={14} />
+              <item.icon size={15} />
               <span>{item.label}</span>
             </button>
           ))}
-        </div>
-
-        {/* Right: Search + Profile */}
-        <div className="flex items-center gap-2 relative z-10">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="glass-input rounded-full pl-7 pr-3 py-1.5 text-[12px] w-36"
-            />
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-kinora-muted pointer-events-none">
-              <SearchIcon size={12} />
-            </div>
-          </div>
-          <div className="w-7 h-7 rounded-full overflow-hidden border border-white/10 flex items-center justify-center">
-            <GeometricAvatar size={28} />
-          </div>
-        </div>
-      </nav>
-    </header>
+        </nav>
+      </div>
+      )}
+    </>
   );
 }

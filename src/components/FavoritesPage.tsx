@@ -6,8 +6,8 @@ export default function FavoritesPage() {
   const favorites = [...continueReading.filter((b) => b.progress > 0), ...recentlyAdded.slice(0, 3)];
 
   return (
-    <div className="pt-20 pb-6 px-6 max-w-[1280px] mx-auto relative z-10">
-      <h1 className="font-serif text-2xl font-semibold text-kinora-text mb-2">
+    <div className="pt-12 pb-8 px-6 max-w-[1280px] mx-auto relative z-10">
+      <h1 className="font-serif text-2xl font-semibold text-kinora-text mb-2 pt-4">
         Favorites
       </h1>
       <p className="text-sm text-kinora-muted mb-8">

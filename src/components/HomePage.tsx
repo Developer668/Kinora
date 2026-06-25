@@ -1,17 +1,11 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import type React from "react";
 import Navbar, { navItems } from "./Navbar";
 import Greeting from "./Greeting";
 import ContinueReadingCard from "./ContinueReadingCard";
 import BookShelf from "./BookShelf";
 import HeroBanner from "./HeroBanner";
-import LibraryPage from "./LibraryPage";
-import WatchPage from "./WatchPage";
-import FavoritesPage from "./FavoritesPage";
-import NotesPage from "./NotesPage";
-import EditProfilePage from "./EditProfilePage";
-import SettingsPage from "./SettingsPage";
-import PricingPage from "./PricingPage";
+import BookReader from "./BookReader";
 import AnimatedPageSwitch from "./AnimatedPageSwitch";
 import logoImg from "../assets/logo-transparent.png";
 import {
@@ -21,9 +15,30 @@ import {
   recommended,
   currentlyReading,
 } from "../data/books";
+import type { Book } from "../data/books";
+
+const LibraryPage = lazy(() => import("./LibraryPage"));
+const WatchPage = lazy(() => import("./WatchPage"));
+const FavoritesPage = lazy(() => import("./FavoritesPage"));
+const NotesPage = lazy(() => import("./NotesPage"));
+const EditProfilePage = lazy(() => import("./EditProfilePage"));
+const SettingsPage = lazy(() => import("./SettingsPage"));
+const PricingPage = lazy(() => import("./PricingPage"));
+
+const PageFallback = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
+  </div>
+);
 
 export default function HomePage() {
-  const [activePage, setActivePage] = useState("Home");
+  const [activePage, setActivePageState] = useState("Home");
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+
+  const setActivePage = (page: string) => {
+    setActivePageState(page);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
 
   const pages: Record<string, React.ReactNode> = {
     Home: (
@@ -33,20 +48,20 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <Greeting />
           </div>
-          <BookShelf title="Continue Reading" books={continueReading} />
-          <BookShelf title="Recently Added" books={recentlyAdded} />
-          <BookShelf title="Popular on Kinora" books={popularOnKinora} />
-          <BookShelf title="Recommended for You" books={recommended} />
+          <BookShelf title="Continue Reading" books={continueReading} onOpen={setSelectedBook} />
+          <BookShelf title="Recently Added" books={recentlyAdded} onOpen={setSelectedBook} />
+          <BookShelf title="Popular on Kinora" books={popularOnKinora} onOpen={setSelectedBook} />
+          <BookShelf title="Recommended for You" books={recommended} onOpen={setSelectedBook} />
         </div>
       </main>
     ),
-    Library: <LibraryPage />,
-    Watch: <WatchPage />,
-    Favorites: <FavoritesPage />,
-    Notes: <NotesPage />,
-    "Edit Profile": <EditProfilePage />,
-    Settings: <SettingsPage />,
-    Pricing: <PricingPage />,
+    Library: <Suspense fallback={<PageFallback />}><LibraryPage /></Suspense>,
+    Watch: <Suspense fallback={<PageFallback />}><WatchPage /></Suspense>,
+    Favorites: <Suspense fallback={<PageFallback />}><FavoritesPage /></Suspense>,
+    Notes: <Suspense fallback={<PageFallback />}><NotesPage /></Suspense>,
+    "Edit Profile": <Suspense fallback={<PageFallback />}><EditProfilePage /></Suspense>,
+    Settings: <Suspense fallback={<PageFallback />}><SettingsPage /></Suspense>,
+    Pricing: <Suspense fallback={<PageFallback />}><PricingPage /></Suspense>,
   };
 
   return (
@@ -100,6 +115,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Book Reader overlay */}
+      <BookReader book={selectedBook} onClose={() => setSelectedBook(null)} />
     </div>
   );
 }

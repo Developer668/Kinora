@@ -4,6 +4,7 @@ import type { Book } from "../data/books";
 interface BookShelfProps {
   title: string;
   books: Book[];
+  onOpen?: (book: Book) => void;
 }
 
 const ArrowIcon = ({ size = 16 }: { size?: number }) => (
@@ -12,7 +13,7 @@ const ArrowIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-export default function BookShelf({ title, books }: BookShelfProps) {
+export default function BookShelf({ title, books, onOpen }: BookShelfProps) {
   return (
     <section className="mb-8 animate-fade-in">
       {/* Header */}
@@ -23,7 +24,7 @@ export default function BookShelf({ title, books }: BookShelfProps) {
             {title}
           </h2>
         </div>
-        <button className="flex items-center gap-1 text-[11px] text-kinora-muted hover:text-kinora-text transition-colors">
+        <button aria-label={`See all ${title}`} className="flex items-center gap-1 text-[11px] text-kinora-muted hover:text-kinora-text transition-colors">
           <span>See All</span>
           <ArrowIcon size={10} />
         </button>
@@ -33,7 +34,7 @@ export default function BookShelf({ title, books }: BookShelfProps) {
       <div className="shelf-container relative">
         <div className="flex gap-4 overflow-x-auto hide-scrollbar px-1 pb-3">
           {books.map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCard key={book.id} book={book} onOpen={onOpen} />
           ))}
         </div>
         <div className="shelf-shadow-line" />

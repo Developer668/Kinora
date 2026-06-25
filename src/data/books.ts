@@ -17,7 +17,7 @@ export const currentUser = {
 };
 
 const cover = (isbn: string) =>
-  `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+  `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
 
 export const currentlyReading: Book = {
   id: "midnight-library",
@@ -227,7 +227,7 @@ export const popularOnKinora: Book[] = [
     progress: 0,
     coverColor: "#1a1a1a",
     coverGradient: "linear-gradient(135deg, #2a2a2a 0%, #0a0a0a 100%)",
-    coverImage: "https://m.media-amazon.com/images/I/81YJFNc54lL._AC_UF1000,1000_QL80_.jpg",
+    coverImage: cover("9781544512280"),
     textColor: "#e5e5e5",
     spineColor: "#000000",
   },
@@ -285,7 +285,7 @@ export const recommended: Book[] = [
     progress: 0,
     coverColor: "#e67e22",
     coverGradient: "linear-gradient(135deg, #e67e22 0%, #a85c15 100%)",
-    coverImage: "https://m.media-amazon.com/images/I/61y1U-lPl5L._AC_UF1000,1000_QL80_.jpg",
+    coverImage: cover("9780345472328"),
     textColor: "#f8e8d8",
     spineColor: "#7d4510",
   },

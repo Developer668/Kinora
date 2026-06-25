@@ -82,7 +82,7 @@ export default function PricingPage() {
         >
           <button
             onClick={() => setBilling("monthly")}
-            className="px-5 py-2 rounded-full text-[12px] font-medium transition-all"
+            className="px-5 py-2 rounded-full text-[12px] font-medium transition-colors"
             style={{
               background: billing === "monthly" ? "rgba(255, 255, 255, 0.1)" : "transparent",
               color: billing === "monthly" ? "rgba(232, 226, 216, 0.9)" : "rgba(168, 158, 148, 0.6)",
@@ -92,7 +92,7 @@ export default function PricingPage() {
           </button>
           <button
             onClick={() => setBilling("yearly")}
-            className="px-5 py-2 rounded-full text-[12px] font-medium transition-all flex items-center gap-2"
+            className="px-5 py-2 rounded-full text-[12px] font-medium transition-colors flex items-center gap-2"
             style={{
               background: billing === "yearly" ? "rgba(255, 255, 255, 0.1)" : "transparent",
               color: billing === "yearly" ? "rgba(232, 226, 216, 0.9)" : "rgba(168, 158, 148, 0.6)",
@@ -164,7 +164,7 @@ export default function PricingPage() {
             {/* CTA */}
             <button
               disabled={plan.current}
-              className="w-full py-2.5 rounded-xl text-[13px] font-medium transition-all mb-6"
+              className="w-full py-2.5 rounded-xl text-[13px] font-medium transition-colors mb-6"
               style={{
                 background: plan.current
                   ? "rgba(255, 255, 255, 0.03)"

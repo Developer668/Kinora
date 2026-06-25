@@ -182,9 +182,9 @@ export default function Greeting() {
   return (
     <div className="animate-fade-in">
       <div className="flex items-center gap-2 mb-0.5">
-        <h1 className="font-serif text-xl font-semibold text-kinora-text tracking-wide">
+        <h2 className="font-serif text-xl font-semibold text-kinora-text tracking-wide">
           <TextGenerateEffect text={`${greeting}, ${currentUser.name}`} />
-        </h1>
+        </h2>
         <AnimatedIcon Icon={Icon} size={22} delay={iconDelay} />
       </div>
       <p className="text-kinora-muted text-[12px]">

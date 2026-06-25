@@ -18,7 +18,7 @@ export function FloatingDock({
   items,
   className,
 }: {
-  items: DockItem[];
+  items: DockItem[]; 
   className?: string;
 }) {
   const mouseX = useMotionValue(Infinity);

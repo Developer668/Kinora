@@ -4,13 +4,18 @@ import { currentlyReading } from "../data/books";
 export default function HeroBanner() {
   return (
     <section className="relative w-full h-[480px] overflow-hidden">
-      {/* Background image */}
+      {/* Background image — LCP element, high priority */}
       <img
-        src="https://media.uiargonaut.com/wp-content/uploads/2024/02/81YzHKeWq7L_cropped-1024x571.jpg"
+        src="/hero-bg.jpg"
         alt="The Midnight Library"
         className="absolute inset-0 w-full h-full object-cover"
         style={{ objectPosition: "center 20%" }}
         loading="eager"
+        decoding="async"
+        // @ts-expect-error fetchpriority is valid HTML but not in React types
+        fetchpriority="high"
+        width={1024}
+        height={571}
       />
 
       {/* Gradient overlays — dark at bottom for readability, subtle at top */}
@@ -53,6 +58,7 @@ export default function HeroBanner() {
           {/* Action buttons */}
           <div className="flex items-center gap-3 mb-4">
             <button
+              aria-label="Read The Midnight Library now"
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-transform"
               style={{
                 background: "rgba(232, 226, 216, 0.9)",
@@ -65,6 +71,7 @@ export default function HeroBanner() {
               Read Now
             </button>
             <button
+              aria-label="Watch cinematic adaptation of The Midnight Library"
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-colors"
               style={{
                 background: "rgba(255, 255, 255, 0.06)",

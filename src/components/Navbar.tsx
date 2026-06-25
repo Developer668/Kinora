@@ -76,21 +76,27 @@ export const navItems = [
 
 export default function Navbar({ active, onNavigate }: { active: string; onNavigate: (page: string) => void }) {
   const [profileOpen, setProfileOpen] = useState(false);
-  const [dockVisible, setDockVisible] = useState(true);
+  const [scrollState, setScrollState] = useState<"top" | "middle" | "bottom">("top");
 
   useEffect(() => {
     const onScroll = () => {
-      const scrollBottom = window.innerHeight + window.scrollY;
+      const y = window.scrollY;
+      const scrollBottom = window.innerHeight + y;
       const docHeight = document.documentElement.scrollHeight;
-      setDockVisible(scrollBottom < docHeight - 120);
+      if (y < 10) setScrollState("top");
+      else if (scrollBottom >= docHeight - 10) setScrollState("bottom");
+      else setScrollState("middle");
     };
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const dockHiddenPages = ["Edit Profile", "Settings", "Pricing"];
   const showDock = !dockHiddenPages.includes(active);
+  // Buttons in header when: at top, at bottom, or on pages without dock
+  const buttonsInHeader = scrollState !== "middle" || !showDock;
+  const dockVisible = scrollState === "middle" && showDock;
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -120,11 +126,48 @@ export default function Navbar({ active, onNavigate }: { active: string; onNavig
             </span>
           </div>
 
+          {/* Center: Nav buttons — visible when at top of page */}
+          <nav
+            className="flex items-center"
+            style={{
+              gap: 2,
+              opacity: buttonsInHeader ? 1 : 0,
+              transition: "opacity 0.25s ease",
+              pointerEvents: buttonsInHeader ? "auto" : "none",
+            }}
+          >
+            {navItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => onNavigate(item.label)}
+                className={`flex items-center gap-1.5 font-medium transition-colors ${
+                  active === item.label
+                    ? "nav-btn-active text-white"
+                    : "nav-btn-hover text-white/70 hover:text-white"
+                }`}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "999px",
+                  fontSize: 11,
+                  transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  transitionDuration: "0.35s",
+                  textShadow: active === item.label
+                    ? "0 0 12px rgba(255,255,255,0.4)"
+                    : "0 0 8px rgba(255,255,255,0.15)",
+                }}
+              >
+                <item.icon size={15} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
           {/* Right: Search + Profile */}
           <div className="flex items-center gap-2.5">
             <GooeySearch />
             <button
               onClick={() => setProfileOpen(!profileOpen)}
+              aria-label="Open profile menu"
               className="w-7 h-7 rounded-full overflow-hidden border border-white/10 flex items-center justify-center transition-transform hover:scale-105"
             >
               <GeometricAvatar size={28} />
@@ -203,19 +246,19 @@ export default function Navbar({ active, onNavigate }: { active: string; onNavig
         )}
       </header>
 
-      {/* Floating dock — hides on certain pages and when near bottom */}
+      {/* Floating dock — appears at bottom when scrolling through middle of page */}
       {showDock && (
       <div
         className="fixed z-50 liquid-glass-dock"
         style={{
           position: "fixed",
-          bottom: 16,
+          bottom: 28,
           left: "50%",
-          transform: `translateX(-50%) translateY(${dockVisible ? 0 : 100}px)`,
+          transform: `translateX(-50%) translateY(${dockVisible ? 0 : 120}px)`,
           borderRadius: "999px",
           padding: "5px 7px",
           opacity: dockVisible ? 1 : 0,
-          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
+          transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
           pointerEvents: dockVisible ? "auto" : "none",
         }}
       >
@@ -224,7 +267,7 @@ export default function Navbar({ active, onNavigate }: { active: string; onNavig
             <button
               key={item.label}
               onClick={() => onNavigate(item.label)}
-              className={`flex items-center gap-1.5 font-medium transition-all ${
+              className={`flex items-center gap-1.5 font-medium transition-colors ${
                 active === item.label
                   ? "nav-btn-active text-white"
                   : "nav-btn-hover text-white/70 hover:text-white"

@@ -59,7 +59,7 @@ export default function WatchPage() {
             {/* Play / Pause button */}
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:scale-[1.03]"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-transform hover:scale-[1.03]"
               style={{
                 background: "rgba(255,255,255,0.12)",
                 backdropFilter: "blur(12px) saturate(160%)",
@@ -91,7 +91,7 @@ export default function WatchPage() {
         {/* Bottom scrubber bar */}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
           <div
-            className="h-full bg-kinora-gold transition-all duration-300"
+            className="h-full bg-kinora-gold transition-[width] duration-300"
             style={{ width: isPlaying ? "35%" : "0%" }}
           />
         </div>
@@ -156,10 +156,10 @@ export default function WatchPage() {
                   setSelected(book);
                   setIsPlaying(false);
                 }}
-                className={`flex-shrink-0 w-[140px] text-left transition-all duration-200 ${isActive ? "opacity-100" : "opacity-40 hover:opacity-70"}`}
+                className={`flex-shrink-0 w-[140px] text-left transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-40 hover:opacity-70"}`}
               >
                 <div
-                  className={`relative rounded-md overflow-hidden mb-1.5 transition-all duration-200 ${isActive ? "ring-1 ring-kinora-gold/50" : ""}`}
+                  className={`relative rounded-md overflow-hidden mb-1.5 transition-shadow duration-200 ${isActive ? "ring-1 ring-kinora-gold/50" : ""}`}
                   style={{ aspectRatio: "2 / 3", background: book.coverGradient }}
                 >
                   <img
@@ -189,9 +189,9 @@ export default function WatchPage() {
                     </div>
                   )}
                 </div>
-                <h4 className="text-[11px] font-medium text-kinora-text truncate leading-tight">
+                <h3 className="text-[11px] font-medium text-kinora-text truncate leading-tight">
                   {book.title}
-                </h4>
+                </h3>
                 <p className="text-[10px] text-kinora-muted truncate">{book.author}</p>
               </button>
             );

@@ -1,0 +1,7 @@
+# Kinora monorepo workspaces. The Python backend/ is intentionally NOT a member.
+# The frontend is the single Electron app at apps/desktop.
+packages:
+  - "apps/*"
+allowBuilds:
+  electron: true
+  esbuild: true

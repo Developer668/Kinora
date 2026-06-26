@@ -2,76 +2,71 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Docs vs. reality — read this first
+Kinora turns a book/PDF into a **page-synced film that generates itself a few seconds ahead of the reader** — six AI agents share one versioned "canon" so a long adaptation stays visually consistent. The product is **native apps** (Electron + a native macOS Swift shell for desktop; Expo/React Native for mobile) over a cloud **FastAPI** backend. There is no web frontend (the legacy Vite app was retired).
 
-There is a large gap between what the docs describe and what the code is:
+## ⚠️ Current reality & key decisions (read first — supersedes stale notes below)
 
-- **`README.md`, `KINORA_COMPLETE_GUIDE.md`, and everything in `docs/`** describe an *aspirational* product — an AI pipeline that turns books/PDFs into page-synced video using a crew of Qwen/Wan agents, an MCP canon server, a scheduler, and an Alibaba Cloud backend. **None of that is implemented.** These are design/hackathon planning documents.
-- **The actual repository is a frontend-only UI prototype**: a React + Vite single-page app packaged as an Electron desktop shell, with hardcoded sample data and no backend, no AI, no PDF rendering, and no networking beyond fetching book-cover images from OpenLibrary.
+- **MAIN app = `apps/desktop`** (Electron + React + Vite + Tailwind): the real product — auth, real backend library, vertical AI-video reading room, live API wiring. Native window glass = Electron `vibrancy` (macOS) / `backgroundMaterial: 'acrylic'` (Windows 11); cross-platform.
+- **SECONDARY app = `apps/desktop-native`** (native **SwiftUI**): a separate showcase whose only job is **real Liquid Glass** (`.glassEffect`, macOS 26) on every control. Not backend-wired. `make app-native`. Keep it separate from Electron.
+- `packages/core` / `apps/mobile` (described below) **don't exist on disk**; the renderer's API client is the hand-written `apps/desktop/src/lib/api.ts`.
+- **Liquid Glass is native-only** (SwiftUI `.glassEffect` / `NSGlassEffectView`). CSS `backdrop-filter`/SVG is an imitation — **never call it Liquid Glass.** The SwiftUI app needs the **Xcode toolchain** (CLT lacks the `SwiftUIMacros` plugin); `make app-native` auto-sets `DEVELOPER_DIR` to the installed Xcode.
+- **Wan video (DashScope intl):** code shipped placeholder ids (`wan2.7-t2v` is invalid). Working ids in `backend/.env`: t2v `wan2.5-t2v-preview`/`wan2.1-t2v-turbo`, i2v `wan2.2-i2v-plus`/`wan2.1-i2v-turbo`; `wan2.2-t2v-plus` fails at render. The `429 Throttling.RateQuota` is on the **image** model, not video. Films are **vertical 720×1280**; saved to `~/Documents/Kinora-Generated-Videos/`.
+- **Local infra:** Postgres host port remapped to **5433** (5432 clashes with `admitly-postgres`); `S3_PUBLIC_BASE_URL=http://localhost:9000/kinora` + client `minio:9000`→`localhost:9000` rewrite for browser-reachable media. Demo login `demo@kinora.local` / `demo-password-123`.
+- **UI baseline:** Kinora-aditya @ `567c502` is the design baseline for `apps/desktop` UI reverts.
 
-When asked to "implement" something from the design docs, assume you are building it from scratch in the frontend (or scaffolding new services) — do not assume any of it already exists. Treat `docs/` as product spec, not as a map of the codebase.
+## Authoritative docs
+- **`kinora.md`** — the technical design (architecture, agents, pipeline, memory, budget). The backend cites its sections as `§4.5`, `§9.7`, etc. **When a docstring cites a `§`, read that section before changing the code.**
+- **`README.md`** — runnable overview + how to bring up the backend and run the apps.
+
+## Repository shape (pnpm + Turborepo monorepo at the root)
+- `backend/` — FastAPI app, six-agent crew, MCP canon server, render pipeline, scheduler + Redis queue, Alembic. Python 3.11+. **Not** a pnpm workspace member.
+- `packages/core/` — shared TypeScript for both apps: the typed API client (generated from the backend OpenAPI), §5.6 event Zod schemas, the **SyncEngine** (scroll↔video↔word playhead), the realtime `SessionSocket`, a Zustand-vanilla auth store, and query keys.
+- `apps/desktop/` — Electron (electron-vite + React 18 + Tailwind): auth, library + PDF upload, two-pane reading room, director bar + live crew activity, `safeStorage` token, electron-builder packaging.
+- `apps/mobile/` — Expo SDK 56 / React 19 / RN 0.85: auth, library, reading room (expo-video + reflow read-along), expo-secure-store, `eas.json`. **SDK 56 is past the training cutoff — read the v56 docs (`apps/mobile/AGENTS.md`) before changing Expo APIs.**
+- `apps/desktop-native/` — **native macOS Liquid Glass shell** (SwiftUI/AppKit via SwiftPM): hosts the React renderer in a `WKWebView` behind a real `NSGlassEffectView` (SwiftUI `.glassEffect`). Built against the macOS 26+ SDK so the OS turns on Liquid Glass — which Electron can't (see gotchas). The web UI defers its chrome to the native strip when `window.__KINORA_NATIVE__` is set; `window.kinora` (token bridge + `openBook`) mirrors the Electron preload.
+- `infra/` — docker-compose (the backend stack) + `terraform/`. `deploy/` — the §12.6 Alibaba proof worker. `assets/books/` — the bundled demo PDF.
 
 ## Commands
+Backend — root `Makefile` (drives `backend/.venv`):
+- `make install` · `make lint` (ruff + mypy) · `make fmt` · `make test` (pytest) · `make migrate`
+- Single backend test: `backend/.venv/bin/pytest tests/test_x.py::test_name -q`
 
-`node_modules` is not checked in — run `npm install` first.
+Apps — pnpm + Turborepo (from the repo root):
+- `make app-install` (= `pnpm install`)
+- `make app-typecheck` — typecheck core + desktop + mobile
+- `make app-test` — `pnpm --filter @kinora/core test` (vitest)
+- `make app-desktop-build` / `app-desktop-dev` — `electron-vite build` / `dev`
+- `make app-mobile-start` — `expo start`
+- `make app-native` / `make app-native-bundle` — run the native macOS Liquid Glass shell (needs `app-desktop-dev` for the :5173 renderer) / build a `KinoraGlass.app` bundle (CLT-only; macOS 26+ SDK)
+- `pnpm --filter @kinora/core gen:api` — regenerate the typed API client after a backend contract change
+- Full monorepo check (the CI `apps` job): `pnpm install && pnpm run typecheck && pnpm --filter @kinora/desktop typecheck && pnpm --filter @kinora/mobile typecheck && pnpm --filter @kinora/core test && pnpm --filter @kinora/desktop build`
 
-| Command | What it does |
-|---|---|
-| `npm run dev:web` | Vite dev server only, on `http://localhost:5173`. **Use this for UI work** — cross-platform and the fastest loop. |
-| `npm run dev` | Vite **+ Electron** together (concurrently). ⚠️ Windows-only as written — see gotcha below. |
-| `npm run dev:electron` | Launch Electron against an already-running dev server. ⚠️ Windows-only. |
-| `npm run build` | Full build: `tsc` (typecheck `src`) → `vite build` (→ `dist/`) → `tsc -p electron/tsconfig.json` (→ `dist-electron/`). |
-| `npm run typecheck` | `tsc --noEmit`. **This is the only static-analysis gate** — there is no ESLint, Prettier, or test runner configured. Run it before considering changes done. |
-| `npm run preview` | Serve the production `dist/` build. |
+## Running it (full detail in the README)
+1. **Backend:** `cp .env.example backend/.env` (set `DASHSCOPE_API_KEY`), then `make stack-up` (docker compose: postgres+pgvector, redis, minio, migrate, api, render-worker, mcp). `make seed-demo` loads a demo book.
+2. **Desktop:** `make app-install` then `make app-desktop-dev` — talks to the API at `http://localhost:8000` (override with `VITE_KINORA_API_URL`).
+3. **Mobile:** `make app-mobile-start` — set the API base in `apps/mobile/src/lib/config.ts` (a device/simulator can't reach `localhost`).
 
-There are **no tests** and **no linter**. "Does it typecheck and run" is the bar. TypeScript is `strict: true`, but `noUnusedLocals`/`noUnusedParameters` are off.
+## The backend process model (every role = the same image, a different command; `infra/docker-compose.yml`)
+| Service | Command | Role |
+|---|---|---|
+| `api` | `uvicorn app.main:app` | REST + SSE/WS; **runs the Scheduler in-process** + the idle-sweeper; spawns Phase-A ingest on PDF upload |
+| `render-worker` | `python -m app.queue.worker` | drains the Redis priority queue; per-shot pipeline / ffmpeg degradation ladder |
+| `mcp` | `python -m app.mcp.run --http` | the canon-memory MCP server |
+| `migrate` | `alembic upgrade head` | one-shot schema apply |
+
+There is **no** standalone scheduler/ingest process — both run inside `api`.
 
 ## Architecture
+- **Composition root** `backend/app/composition.py` builds the wired `Container` (every DI seam). Lazy — `create_app()` + `/health` work with `DASHSCOPE_API_KEY=test` and no network.
+- **Agent crew** (`backend/app/agents/`): six contract-bound agents behind `BaseAgent`; deterministic policy (render-mode tree §9.3, Critic routing §9.5, arbitration §7.2) lives in the concrete agents as pure functions.
+- **Memory = the MCP canon server** (`backend/app/memory/` + `mcp/`): `MemoryTools.dispatch` is the single execution path for every tool.
+- **Scheduler** (`backend/app/scheduler/`): dual-watermark buffer; committed/speculative/cold zones; reserves video-seconds from the budget.
+- **Render** (`backend/app/render/`): the §9.7 per-shot state machine; the ffmpeg Ken-Burns degradation lane is a real product feature, not a placeholder.
+- **Apps share `@kinora/core`:** the framework-agnostic `SyncEngine` (subscribe/getSnapshot for `useSyncExternalStore`) is the client playhead single-source-of-truth, consumed by both shells.
 
-**Stack:** Vite 5 + React 18 + TypeScript + Tailwind 3 + Framer Motion, wrapped in Electron 33 for desktop. Path alias `@/` → `src/`.
-
-### Navigation is state-based, not routed
-
-There is **no router** (no `react-router`). The whole app is one page with client-side view switching:
-
-- `src/App.tsx` is a trivial wrapper that renders `HomePage`.
-- **`src/components/HomePage.tsx` is the real app shell.** It owns `activePage` (a string) and `selectedBook` state, and defines a `pages: Record<string, ReactNode>` map. It renders `Navbar` + `AnimatedPageSwitch` (which displays `pages[activePage]`) + footer + a `BookReader` overlay.
-- `src/components/Navbar.tsx` exports the `navItems` array — the **single source of truth for primary nav** (Home / Library / Watch / Favorites / Notes). It calls `onNavigate(label)` with the label string. Secondary destinations (Edit Profile / Settings / Pricing) are reached from the profile dropdown.
-- `src/components/AnimatedPageSwitch.tsx` remounts (via a changing `key`) and replays a fade whenever `active` changes.
-
-**To add a page:** (1) add a `lazy(() => import(...))` and an entry in the `pages` record in `HomePage.tsx`; (2) if it belongs in primary nav, add it to `navItems` in `Navbar.tsx` — otherwise wire a button to `onNavigate("Your Page")`. The `Home` page content is eager; all other pages are `React.lazy` + `Suspense`.
-
-Note `Navbar` renders nav twice — a top header bar and a floating bottom dock — and swaps between them based on scroll position (`scrollState`). `dockHiddenPages` suppresses the dock on form-like pages.
-
-### Data and state
-
-- All content is **hardcoded** in `src/data/books.ts`: the `Book` interface plus shelf arrays (`continueReading`, `recentlyAdded`, `popularOnKinora`, `recommended`, etc.). Cover images come from `https://covers.openlibrary.org/.../<isbn>` via the `cover()` helper; `onError` handlers hide broken images.
-- **No global state management and no persistence** — just local `useState`. "Reading" / "watching" are visual mockups (`BookReader` shows hardcoded placeholder prose; `WatchPage` is a play/pause UI with no real video).
-
-### Electron layer
-
-- `electron/main.ts`: creates the `BrowserWindow`; loads `process.env.VITE_DEV_SERVER_URL` in dev, else `dist/index.html`. `contextIsolation: true`, `nodeIntegration: false`.
-- `electron/preload.ts` is intentionally empty — there is **no IPC bridge / `window.electron` API yet**. Adding native↔renderer communication starts here.
-- Built separately to `dist-electron/` as CommonJS via `electron/tsconfig.json`.
-
-## Design system (the bulk of the actual code)
-
-This is a heavily design-focused UI; most components are visual. The look is a dark "liquid glass" aesthetic. Match existing conventions rather than introducing new patterns:
-
-- **Theme tokens** live in `tailwind.config.js` under the `kinora` color namespace (`bg`, `bg-deep`, `text`, `muted`, `subtle`, `gold`, `gold-light`) and two font families: `font-serif` = Fraunces (headings), `font-sans` = DM Sans (body, loaded in `index.html`).
-- **`src/index.css` is central** — reusable classes do the heavy lifting and are reused everywhere: `.kinora-bg` (the gradient backdrop), `.liquid-glass-dock`, `.glass-card`, `.glass-input`, `.nav-btn-active` / `.nav-btn-hover`, the 3D book effect (`.book-3d-wrapper` / `.book-cover` with `::before`/`::after` page edges), `.tab-fade`, and progress-ring classes. Components combine these with heavy inline `style={{}}` (hand-tuned `rgba`/`backdrop-filter`) for one-off polish.
-- Animations use **Framer Motion** (`motion`, `AnimatePresence`) for overlays/transitions; spring curves are defined as CSS vars in `:root`.
-
-### Performance conventions (a prior commit tuned Lighthouse — preserve these)
-
-- `content-visibility: auto` + `contain-intrinsic-size` on `.shelf-container` and `.footer-glass` to skip off-screen rendering.
-- Manual Vite chunk splitting in `vite.config.ts` (`react-vendor`, `motion-vendor`).
-- Fonts loaded via the `media="print"` → `onload="this.media='all'"` swap trick in `index.html`; hero image (`public/hero-bg.jpg`) is preloaded.
-- Lazy-loaded images (`loading="lazy"`) and route-level `lazy()` splitting; `prefers-reduced-motion` is respected in CSS.
-
-Keep these in place when editing the relevant files.
-
-## Gotchas
-
-- **`launch.cjs` is Windows-only.** It hardcodes `node_modules/electron/dist/electron.exe`. On macOS/Linux this path doesn't exist, so `npm run dev` and `npm run dev:electron` will fail. This repo's dev environment is macOS — **use `npm run dev:web` for UI work**, and fix the binary path in `launch.cjs` (or invoke `electron` directly) if you need the desktop shell here.
-- README/docs describe unbuilt features — see the top section. Don't cite them as existing behavior.
+## Critical gotchas
+- **`KINORA_LIVE_VIDEO` is OFF by default and must stay off** unless you intend to spend real Wan credits. The whole loop still runs end-to-end (Ken-Burns mp4s, budget stays 0). Note off-gate the Scheduler does **not** promote COMMITTED render jobs (it gates on `budget.can_render_live()`), so in-app video playback needs the live gate; the render pipeline itself is exercised by enqueuing jobs directly. Ingest still calls DashScope image-gen (keyframes/identity), which can hit a `429 Throttling.RateQuota` independent of `KINORA_LIVE_VIDEO`.
+- **Real macOS Liquid Glass needs an app linked against the macOS 26+ SDK — Electron can't.** The Electron 33 binary links the macOS 14.5 SDK (and even the latest Electron isn't on the 26 SDK), so the OS renders it legacy and `electron-liquid-glass` only attaches a no-op view. Genuine glass lives in `apps/desktop-native/` (Swift, 26-SDK). Don't promise real glass in Electron.
+- **Backend tests:** the unit suite runs with no infra (infra-bound tests skip); integration needs `KINORA_TEST_DATABASE_URL` / `_REDIS_URL` / `_S3_ENDPOINT_URL`; live model smokes are gated by `KINORA_LIVE_TESTS=1`.
+- **pnpm:** `node-linker=hoisted` (RN/Metro needs it); native build-script approvals (esbuild, electron) live in `pnpm-workspace.yaml` under `allowBuilds`.
+- **Config:** all backend settings in `backend/app/core/config.py` (pydantic-settings); only `DASHSCOPE_API_KEY` is required. `alembic.ini` reads the URL from `Settings`.
